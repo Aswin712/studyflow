@@ -1,0 +1,42 @@
+name: studyflow
+description: Aplikasi manajemen jadwal mahasiswa
+publish_to: 'none'
+version: 3.3.0+330
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  provider: ^6.1.2
+  shared_preferences: ^2.3.2
+  flutter_local_notifications: ^17.2.4
+  intl: ^0.19.0
+  uuid: ^4.4.0
+  timezone: ^0.9.4
+  image_picker: ^1.1.2
+  path_provider: ^2.1.4
+  path: ^1.9.1
+  home_widget: 0.7.0
+  share_plus: ^10.0.0
+  file_picker: ^8.0.0
+  google_fonts: ^8.1.0
+  sqflite: ^2.4.2+1
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^3.0.0
+  flutter_launcher_icons: ^0.14.3
+  sqflite_common_ffi: ^2.4.0+3
+
+flutter_launcher_icons:
+  android: true
+  ios: false
+  image_path: "assets/icon/app_icon.png"
+  adaptive_icon_background: "#FFFFFF"
+  adaptive_icon_foreground: "assets/icon/app_icon.png"
+
+flutter:
+  uses-material-design: true
