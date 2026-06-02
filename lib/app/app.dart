@@ -119,6 +119,19 @@ class _MainScreenState extends State<MainScreen> {
   ];
 
   @override
+  void initState() {
+    super.initState();
+    // Jalankan resync notification di latar belakang saat aplikasi pertama dibuka
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final courseProvider = context.read<CourseProvider>();
+      String getCourseName(String id) => courseProvider.getById(id)?.name ?? 'Mata Kuliah';
+      
+      context.read<TaskProvider>().syncNotifications(getCourseName);
+      context.read<ExamProvider>().syncNotifications(getCourseName);
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
     final isTutorialCompleted = context.watch<SettingsProvider>().isTutorialCompleted;
 

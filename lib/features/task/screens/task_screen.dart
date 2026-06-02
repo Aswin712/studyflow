@@ -113,6 +113,34 @@ class _TaskScreenState extends State<TaskScreen> {
           ] else ...[
             Consumer<TaskProvider>(
               builder: (_, p, __) {
+                final visibilityBtn = IconButton(
+                  icon: Icon(
+                    p.showDone ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+                  ),
+                  tooltip: p.showDone ? 'Sembunyikan selesai' : 'Tampilkan selesai',
+                  onPressed: p.toggleShowDone,
+                );
+
+                final sortBtn = PopupMenuButton<TaskSortType>(
+                  icon: const Icon(Icons.sort),
+                  tooltip: 'Urutkan',
+                  onSelected: p.setSortType,
+                  itemBuilder: (context) => [
+                    PopupMenuItem(
+                      value: TaskSortType.deadlineAsc,
+                      child: Text('Deadline Terdekat', style: TextStyle(fontWeight: p.sortType == TaskSortType.deadlineAsc ? FontWeight.bold : FontWeight.normal)),
+                    ),
+                    PopupMenuItem(
+                      value: TaskSortType.deadlineDesc,
+                      child: Text('Deadline Terjauh', style: TextStyle(fontWeight: p.sortType == TaskSortType.deadlineDesc ? FontWeight.bold : FontWeight.normal)),
+                    ),
+                    PopupMenuItem(
+                      value: TaskSortType.priorityHigh,
+                      child: Text('Prioritas Tinggi', style: TextStyle(fontWeight: p.sortType == TaskSortType.priorityHigh ? FontWeight.bold : FontWeight.normal)),
+                    ),
+                  ],
+                );
+
                 if (p.showDone && p.done.isNotEmpty) {
                   return Row(
                     mainAxisSize: MainAxisSize.min,
@@ -122,22 +150,14 @@ class _TaskScreenState extends State<TaskScreen> {
                         tooltip: 'Pilih tugas selesai',
                         onPressed: () => setState(() => _isSelectionMode = true),
                       ),
-                      IconButton(
-                        icon: Icon(
-                          p.showDone ? Icons.visibility_off_outlined : Icons.visibility_outlined,
-                        ),
-                        tooltip: p.showDone ? 'Sembunyikan selesai' : 'Tampilkan selesai',
-                        onPressed: p.toggleShowDone,
-                      ),
+                      sortBtn,
+                      visibilityBtn,
                     ],
                   );
                 }
-                return IconButton(
-                  icon: Icon(
-                    p.showDone ? Icons.visibility_off_outlined : Icons.visibility_outlined,
-                  ),
-                  tooltip: p.showDone ? 'Sembunyikan selesai' : 'Tampilkan selesai',
-                  onPressed: p.toggleShowDone,
+                return Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [sortBtn, visibilityBtn],
                 );
               },
             ),
@@ -165,6 +185,38 @@ class _TaskScreenState extends State<TaskScreen> {
               ),
               onChanged: (value) => setState(() => _searchQuery = value.toLowerCase()),
             ),
+          ),
+          Consumer2<TaskProvider, CourseProvider>(
+            builder: (context, taskProvider, courseProvider, _) {
+              if (courseProvider.courses.isEmpty) return const SizedBox.shrink();
+              return SizedBox(
+                height: 48,
+                child: ListView(
+                  scrollDirection: Axis.horizontal,
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.only(right: 8),
+                      child: FilterChip(
+                        label: const Text('Semua'),
+                        selected: taskProvider.filterCourseId == null,
+                        onSelected: (_) => taskProvider.setFilterCourseId(null),
+                      ),
+                    ),
+                    ...courseProvider.courses.map((course) {
+                      return Padding(
+                        padding: const EdgeInsets.only(right: 8),
+                        child: FilterChip(
+                          label: Text(course.name),
+                          selected: taskProvider.filterCourseId == course.id,
+                          onSelected: (_) => taskProvider.setFilterCourseId(course.id),
+                        ),
+                      );
+                    }),
+                  ],
+                ),
+              );
+            },
           ),
           Expanded(
             child: Consumer<TaskProvider>(

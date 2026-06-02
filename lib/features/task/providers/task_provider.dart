@@ -6,11 +6,21 @@ import '../../../core/models/task.dart';
 import '../../../core/services/notification_service.dart';
 import '../repositories/task_repository.dart';
 
+enum TaskSortType {
+  deadlineAsc,
+  deadlineDesc,
+  priorityHigh,
+}
+
 class TaskProvider extends ChangeNotifier {
   final TaskRepository _repo;
   final NotificationService _notif;
   List<Task> _tasks = [];
   bool _showDone = false;
+  bool _hasSyncedNotifications = false;
+
+  TaskSortType _sortType = TaskSortType.deadlineAsc;
+  String? _filterCourseId;
 
   // Cache untuk pending — hindari filter+sort berulang
   List<Task>? _pendingCache;
@@ -30,15 +40,56 @@ class TaskProvider extends ChangeNotifier {
   }
 
   bool get showDone => _showDone;
+  TaskSortType get sortType => _sortType;
+  String? get filterCourseId => _filterCourseId;
+
+  void setSortType(TaskSortType type) {
+    _sortType = type;
+    _pendingCache = null;
+    notifyListeners();
+  }
+
+  void setFilterCourseId(String? courseId) {
+    _filterCourseId = courseId;
+    _pendingCache = null;
+    notifyListeners();
+  }
 
   List<Task> get pending {
     if (_pendingCache != null) return _pendingCache!;
-    _pendingCache = _tasks.where((t) => !t.isDone).toList()
-      ..sort((a, b) => a.deadlineDateTime.compareTo(b.deadlineDateTime));
+    
+    var filtered = _tasks.where((t) => !t.isDone);
+    if (_filterCourseId != null) {
+      filtered = filtered.where((t) => t.courseId == _filterCourseId);
+    }
+    
+    _pendingCache = filtered.toList();
+    
+    switch (_sortType) {
+      case TaskSortType.deadlineAsc:
+        _pendingCache!.sort((a, b) => a.deadlineDateTime.compareTo(b.deadlineDateTime));
+        break;
+      case TaskSortType.deadlineDesc:
+        _pendingCache!.sort((a, b) => b.deadlineDateTime.compareTo(a.deadlineDateTime));
+        break;
+      case TaskSortType.priorityHigh:
+        _pendingCache!.sort((a, b) {
+          final p = b.priority.compareTo(a.priority);
+          if (p != 0) return p;
+          return a.deadlineDateTime.compareTo(b.deadlineDateTime);
+        });
+        break;
+    }
     return _pendingCache!;
   }
 
-  List<Task> get done => _tasks.where((t) => t.isDone).toList();
+  List<Task> get done {
+    var filtered = _tasks.where((t) => t.isDone);
+    if (_filterCourseId != null) {
+      filtered = filtered.where((t) => t.courseId == _filterCourseId);
+    }
+    return filtered.toList();
+  }
 
   List<Task> get visible => _showDone ? _tasks : pending;
 
@@ -84,16 +135,28 @@ class TaskProvider extends ChangeNotifier {
     );
     await _repo.save(task);
     await _notif.scheduleTaskReminder(task, courseName);
-    load();
+    await load();
   }
 
   Future<void> update(Task task, String courseName) async {
+    final oldTask = getById(task.id);
+    if (oldTask != null) {
+      if (oldTask.imagePath != null && oldTask.imagePath!.isNotEmpty) {
+        if (task.imagePath != oldTask.imagePath) {
+          try {
+            final file = File(oldTask.imagePath!);
+            if (file.existsSync()) file.deleteSync();
+          } catch (_) {}
+        }
+      }
+    }
+
     await _repo.save(task);
     await _notif.cancelTaskReminder(task.id);
     if (!task.isDone) {
       await _notif.scheduleTaskReminder(task, courseName);
     }
-    load();
+    await load();
   }
 
   Future<void> toggleDone(String id) async {
@@ -155,5 +218,16 @@ class TaskProvider extends ChangeNotifier {
     }
     await _repo.deleteByCourse(courseId);
     await load();
+  }
+
+  Future<void> syncNotifications(String Function(String) getCourseName) async {
+    if (_hasSyncedNotifications) return;
+    _hasSyncedNotifications = true;
+
+    final pendingTasks = pending;
+    for (final task in pendingTasks) {
+      await _notif.cancelTaskReminder(task.id);
+      await _notif.scheduleTaskReminder(task, getCourseName(task.courseId));
+    }
   }
 }

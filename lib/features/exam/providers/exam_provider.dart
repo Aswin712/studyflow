@@ -9,6 +9,7 @@ class ExamProvider extends ChangeNotifier {
   final ExamRepository _repo;
   final NotificationService _notif;
   List<Exam> _exams = [];
+  bool _hasSyncedNotifications = false;
 
   ExamProvider(this._repo, this._notif) {
     load();
@@ -91,5 +92,15 @@ class ExamProvider extends ChangeNotifier {
     }
     await _repo.deleteByCourse(courseId);
     await load();
+  }
+
+  Future<void> syncNotifications(String Function(String) getCourseName) async {
+    if (_hasSyncedNotifications) return;
+    _hasSyncedNotifications = true;
+
+    for (final exam in upcoming) {
+      await _notif.cancelExamReminder(exam.id);
+      await _notif.scheduleExamReminder(exam, getCourseName(exam.courseId));
+    }
   }
 }

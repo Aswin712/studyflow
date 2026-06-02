@@ -1,7 +1,7 @@
 name: studyflow
 description: Aplikasi manajemen jadwal mahasiswa
 publish_to: 'none'
-version: 3.3.0+330
+version: 3.5.0+350
 
 environment:
   sdk: '>=3.0.0 <4.0.0'

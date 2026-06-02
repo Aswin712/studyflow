@@ -1,5 +1,49 @@
 # Patch Update
 
+## Version 3.5.0 (Guide App, UX, & Optimasi Skala)
+Pembaruan ini berfokus pada pengenalan aplikasi untuk pengguna baru (Guide App) serta optimasi tingkat lanjut pada UX dan manajemen penyimpanan untuk mencegah penumpukan data sampah.
+
+### 🔴 Prioritas 1: Interactive Tutorial Banner (Guide App)
+- **Solusi**: Menambahkan *floating banner* panduan langkah-demi-langkah interaktif di halaman Dashboard khusus untuk pengguna baru. Banner ini akan secara cerdas mendeteksi status kekosongan data (Mata Kuliah, Jadwal, Tugas) dan mengarahkan pengguna dengan navigasi otomatis.
+- **Solusi Animasi**: Menambahkan efek animasi denyut (Pulse/Glow) pada tombol `+ Tambah` (Floating Action Button) di masing-masing tab yang sedang aktif di tutorial agar pengguna lebih terarah.
+- **File Terdampak**:
+  - `lib/shared/widgets/tutorial_banner_widget.dart` (Baru)
+  - `lib/shared/widgets/tutorial_fab_highlight.dart` (Baru)
+  - `lib/app/app.dart`
+  - `lib/features/course/screens/course_screen.dart`
+  - `lib/features/schedule/screens/schedule_screen.dart`
+  - `lib/features/task/screens/task_screen.dart`
+
+### 🟡 Prioritas 2: Optimasi Penyimpanan & Notifikasi (Resync & Orphan Files)
+- **Solusi Foto (Orphan Files)**: Menutup celah kebocoran memori (Storage Leak). Sebelumnya, foto lama tidak terhapus jika pengguna *mengedit* tugas dan mengganti fotonya. Kini, sistem membandingkan path foto lama dan baru saat proses `update`, dan otomatis menghapus foto lama secara permanen.
+- **Solusi Notifikasi (Silent Resync)**: Menambahkan mekanisme *Silent Resync* di `app.dart` yang memanggil `syncNotifications()` untuk mengamankan dan mendaftarkan ulang semua alarm/tugas saat aplikasi pertama kali dibuka. Ini memperbaiki isu hilangnya alarm akibat *cache* OS yang terhapus setelah proses *reboot*.
+- **File Terdampak**:
+  - `lib/features/task/providers/task_provider.dart`
+  - `lib/features/exam/providers/exam_provider.dart`
+  - `lib/app/app.dart`
+
+### 🟡 Prioritas 3: Filter & Pengurutan Tingkat Lanjut (UX)
+- **Solusi**: Memperkaya halaman Tugas (`TaskScreen`) dengan opsi *FilterChips* horisontal untuk menyaring tugas berdasarkan mata kuliah tertentu. Ditambah sebuah *PopupMenuButton* untuk mengurutkan daftar tugas secara dinamis (Deadline Terdekat, Deadline Terjauh, atau Prioritas Tinggi).
+- **File Terdampak**:
+  - `lib/features/task/providers/task_provider.dart`
+  - `lib/features/task/screens/task_screen.dart`
+
+### 🔧 Perbaikan Bug (Hotfixes)
+- **SQLite Database Crash**: Memperbaiki skema tabel database dan migrasi dari SharedPreferences yang sebelumnya *crash* di versi 3.4.0.
+- **Google Fonts Offline**: Menghapus blokade `allowRuntimeFetching` agar font utama aplikasi dapat diunduh jika tidak tersedia secara luring.
+
+### Daftar Semua File yang Diubah
+| File | Jenis Perubahan |
+|---|---|
+| `lib/shared/widgets/tutorial_banner_widget.dart` | **File Baru** — Banner Panduan Pengguna Baru |
+| `lib/shared/widgets/tutorial_fab_highlight.dart` | **File Baru** — Animasi Denyut Tombol FAB |
+| `lib/app/app.dart` | Integrasi Tutorial Banner dan Silent Notification Resync |
+| `lib/features/task/providers/task_provider.dart` | Logika hapus foto lama (Update), Sinkronisasi Notif, Filter & Sort |
+| `lib/features/task/screens/task_screen.dart` | UI FilterChips dan Sort Menu |
+| `pubspec.yaml` | Version bump → 3.5.0+350 |
+
+---
+
 ## Version 3.4.0 (Migrasi SQLite & Arsitektur)
 ### Arsitektur & Performa 🚀
 - **Migrasi Database:** Seluruh penyimpanan utama (Mata Kuliah, Tugas, Jadwal, Ujian) yang sebelumnya berbasis JSON text (`SharedPreferences`) kini telah dimigrasikan ke **SQLite**!
