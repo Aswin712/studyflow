@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as p;
+import 'package:flutter_image_compress/flutter_image_compress.dart';
 
 /// Widget upload foto untuk form tugas.
 /// Menangani: pilih dari kamera/galeri, simpan ke app documents,
@@ -67,12 +68,39 @@ class ImagePickerWidget extends StatelessWidget {
         taskImagesDir.createSync(recursive: true);
       }
 
-      final ext =
-          p.extension(xfile.path).isNotEmpty ? p.extension(xfile.path) : '.jpg';
-      final fileName = 'task_${DateTime.now().millisecondsSinceEpoch}$ext';
+      final ext = p.extension(xfile.path).isNotEmpty ? p.extension(xfile.path) : '.jpg';
+      final isAlreadyCompressed = xfile.name.contains('_cmp_');
+      final originalFile = File(xfile.path);
+      final fileSize = originalFile.lengthSync();
+      
+      bool shouldCompress = !isAlreadyCompressed && fileSize > 500 * 1024; // > 500KB
+      
+      String fileName;
+      if (shouldCompress) {
+        fileName = 'task_${DateTime.now().millisecondsSinceEpoch}_cmp_$ext';
+      } else {
+        fileName = 'task_${DateTime.now().millisecondsSinceEpoch}$ext';
+      }
+      
       final destPath = p.join(taskImagesDir.path, fileName);
 
-      await File(xfile.path).copy(destPath);
+      if (shouldCompress) {
+        try {
+          final result = await FlutterImageCompress.compressAndGetFile(
+            xfile.path,
+            destPath,
+            quality: 70,
+            minWidth: 1200,
+            minHeight: 1200,
+          );
+          if (result != null) return result.path;
+        } catch (_) {
+          // Fallback if compression fails
+        }
+      }
+      
+      // Default: just copy the original file
+      await originalFile.copy(destPath);
       return destPath;
     } catch (_) {
       return null;

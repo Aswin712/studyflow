@@ -1,7 +1,7 @@
 name: studyflow
 description: Aplikasi manajemen jadwal mahasiswa
 publish_to: 'none'
-version: 3.5.0+350
+version: 3.6.0+360
 
 environment:
   sdk: '>=3.0.0 <4.0.0'
@@ -23,6 +23,8 @@ dependencies:
   file_picker: ^8.0.0
   google_fonts: ^8.1.0
   sqflite: ^2.4.2+1
+  archive: ^4.0.9
+  flutter_image_compress: ^2.4.0
 
 dev_dependencies:
   flutter_test:

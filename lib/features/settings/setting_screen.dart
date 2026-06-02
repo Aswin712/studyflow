@@ -276,7 +276,7 @@ class _DataManagementCard extends StatelessWidget {
               title: const Text('Import Data (Restore)'),
               subtitle: const Text('Pulihkan data dari file backup'),
               onTap: () async {
-                final result = await BackupService.restoreData();
+                final result = await BackupService.restoreData(context);
                 if (result == 'SUCCESS' && context.mounted) {
                   // Invalidate cache + reload dari storage
                   context.read<CourseProvider>().reload();

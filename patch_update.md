@@ -1,5 +1,31 @@
 # Patch Update
 
+## Version 3.6.0 (Arsitektur Failsafe ZIP & Kompresi Pintar)
+Pembaruan tingkat menengah (Medium Update) yang merombak lapisan bawah (Under-the-Hood) aplikasi agar tahan banting terhadap skenario *data loss* serta hemat memori internal. Semuanya disusun dengan filosofi *Keep It Simple, Stupid* (KISS) demi performa maksimal.
+
+### 🔴 Prioritas 1: Sistem Failsafe Full Backup (.ZIP)
+- **Solusi**: Merombak total `BackupService` yang sebelumnya hanya mengekspor teks JSON rentan. Kini, ekspor menghasilkan paket ZIP solid berisi `data.json` beserta **seluruh file foto**.
+- **Alur Pemulihan (Restore) Pintar**: Saat melakukan *Import Backup*, sistem tidak langsung menimpa data. Aplikasi akan mengekstrak file ke folder sementara (TEMP), memunculkan **Dialog Konfirmasi**, barulah mengeksekusi operasi pembersihan "Zombie Photos", memindahkan foto baru, dan memperbarui SQLite secara bersih.
+- **File Terdampak**:
+  - `lib/core/services/backup_service.dart`
+  - `lib/features/settings/setting_screen.dart`
+
+### 🔴 Prioritas 2: Kompresi Gambar Anti-Bengkak
+- **Solusi**: Mengintegrasikan `flutter_image_compress` di `ImagePickerWidget` untuk menjaga kesehatan penyimpanan perangkat.
+- **Deteksi Cerdas (Generational Loss Prevention)**: Saat ukuran foto > 500KB, aplikasi mengompresinya hingga kualitas 70% dan menyisipkan *stamp* `_cmp_` pada nama filenya. Jika suatu file sudah memiliki nama `_cmp_` (misalnya hasil restore), sistem akan **melompatinya**, mencegah gambar menjadi pixelated akibat dikompresi berulang kali!
+- **File Terdampak**:
+  - `lib/features/task/widgets/image_picker_widget.dart`
+
+### Daftar Semua File yang Diubah
+| File | Jenis Perubahan |
+|---|---|
+| `lib/core/services/backup_service.dart` | Merombak arsitektur JSON-Only menjadi ZIP-Archive. Dialog dan validasi TEMP Directory |
+| `lib/features/settings/setting_screen.dart` | Penambahan parameter *BuildContext* untuk memanggil dialog konfirmasi |
+| `lib/features/task/widgets/image_picker_widget.dart` | Mengimplementasikan kompresi ukuran & *skip flags* `_cmp_` |
+| `pubspec.yaml` | Menambahkan pustaka `archive` dan `flutter_image_compress`. Version bump → 3.6.0+360 |
+
+---
+
 ## Version 3.5.0 (Guide App, UX, & Optimasi Skala)
 Pembaruan ini berfokus pada pengenalan aplikasi untuk pengguna baru (Guide App) serta optimasi tingkat lanjut pada UX dan manajemen penyimpanan untuk mencegah penumpukan data sampah.
 
