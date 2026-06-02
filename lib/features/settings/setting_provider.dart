@@ -8,6 +8,7 @@ class SettingsProvider extends ChangeNotifier {
   ThemeMode _themeMode = ThemeMode.system;
   ThemePreset _themePreset = ThemePreset.indigo;
   String _userName = '';
+  bool _isTutorialCompleted = false;
 
   SettingsProvider(this._storage) {
     _load();
@@ -16,6 +17,7 @@ class SettingsProvider extends ChangeNotifier {
   ThemeMode get themeMode => _themeMode;
   ThemePreset get themePreset => _themePreset;
   String get userName => _userName;
+  bool get isTutorialCompleted => _isTutorialCompleted;
 
   bool get isDark => _themeMode == ThemeMode.dark;
   bool get isLight => _themeMode == ThemeMode.light;
@@ -36,6 +38,7 @@ class SettingsProvider extends ChangeNotifier {
     } else {
       _themePreset = ThemePreset.indigo;
     }
+    _isTutorialCompleted = _storage.loadTutorialCompleted();
     notifyListeners();
   }
 
@@ -58,6 +61,12 @@ class SettingsProvider extends ChangeNotifier {
   Future<void> setThemePreset(ThemePreset preset) async {
     _themePreset = preset;
     await _storage.saveThemePreset(preset.index);
+    notifyListeners();
+  }
+
+  Future<void> completeTutorial() async {
+    _isTutorialCompleted = true;
+    await _storage.saveTutorialCompleted(true);
     notifyListeners();
   }
 }

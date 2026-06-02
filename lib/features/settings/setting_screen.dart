@@ -6,7 +6,6 @@ import '../course/providers/course_provider.dart';
 import '../schedule/providers/schedule_provider.dart';
 import '../task/providers/task_provider.dart';
 import '../exam/providers/exam_provider.dart';
-import '../../../core/theme/theme_presets.dart';
 import 'personalization_screen.dart';
 
 class SettingsScreen extends StatelessWidget {

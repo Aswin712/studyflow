@@ -8,6 +8,10 @@ import '../providers/task_provider.dart';
 import 'task_form_screen.dart';
 import 'task_detail_screen.dart';
 import '../../../shared/widgets/empty_state_widget.dart';
+import '../../../shared/widgets/tutorial_fab_highlight.dart';
+import '../../settings/setting_provider.dart';
+import '../../schedule/providers/schedule_provider.dart';
+import '../../exam/providers/exam_provider.dart';
 
 class TaskScreen extends StatefulWidget {
   const TaskScreen({super.key});
@@ -213,13 +217,24 @@ class _TaskScreenState extends State<TaskScreen> {
           ),
         ],
       ),
-      floatingActionButton: _isSelectionMode ? null : FloatingActionButton.extended(
-        onPressed: () => Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => const TaskFormScreen()),
-        ),
-        icon: const Icon(Icons.add),
-        label: const Text('Tambah'),
+      floatingActionButton: _isSelectionMode ? null : Consumer4<SettingsProvider, ScheduleProvider, TaskProvider, ExamProvider>(
+        builder: (context, settings, scheduleProvider, taskProvider, examProvider, child) {
+          final isHighlighting = !settings.isTutorialCompleted &&
+                                 scheduleProvider.all.isNotEmpty &&
+                                 taskProvider.all.isEmpty &&
+                                 examProvider.all.isEmpty;
+          return TutorialFabHighlight(
+            isHighlighting: isHighlighting,
+            child: FloatingActionButton.extended(
+              onPressed: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const TaskFormScreen()),
+              ),
+              icon: const Icon(Icons.add),
+              label: const Text('Tambah'),
+            ),
+          );
+        },
       ),
     );
   }

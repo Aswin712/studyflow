@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../utils/constants.dart';
 
@@ -54,6 +53,15 @@ class LocalStorageService {
   bool loadIsFirstLaunch() {
     // Default true jika belum pernah diset
     return _prefs.getBool(AppConstants.keyFirstLaunch) ?? true;
+  }
+
+  // Tutorial flag
+  Future<void> saveTutorialCompleted(bool isCompleted) async {
+    await _prefs.setBool(AppConstants.keyTutorialCompleted, isCompleted);
+  }
+
+  bool loadTutorialCompleted() {
+    return _prefs.getBool(AppConstants.keyTutorialCompleted) ?? false;
   }
 
   // Theme preset

@@ -9,6 +9,7 @@ class AppConstants {
   static const String keyThemePreset = 'sf_theme_preset';
   static const String keyUserName = 'sf_user_name';
   static const String keyFirstLaunch = 'sf_first_launch';
+  static const String keyTutorialCompleted = 'tutorial_completed';
 
   // Notification channels
   static const String notifChannelId = 'studyflow_channel';

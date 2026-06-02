@@ -21,6 +21,7 @@ import '../features/task/screens/task_detail_screen.dart';
 import '../features/exam/screens/exam_form_screen.dart';
 import '../shared/widgets/app_bottom_nav.dart';
 import '../shared/widgets/lazy_indexed_stack.dart';
+import '../shared/widgets/tutorial_banner_widget.dart';
 import '../features/onboarding/screens/onboarding_screen.dart';
 
 import '../core/theme/app_theme.dart';
@@ -119,10 +120,25 @@ class _MainScreenState extends State<MainScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isTutorialCompleted = context.watch<SettingsProvider>().isTutorialCompleted;
+
     return Scaffold(
-      body: LazyIndexedStack(
-        index: _currentIndex,
-        children: _screens,
+      body: Stack(
+        children: [
+          LazyIndexedStack(
+            index: _currentIndex,
+            children: _screens,
+          ),
+          if (!isTutorialCompleted)
+            Positioned(
+              top: MediaQuery.of(context).padding.top,
+              left: 0,
+              right: 0,
+              child: TutorialBannerWidget(
+                onNavigateTab: (index) => setState(() => _currentIndex = index),
+              ),
+            ),
+        ],
       ),
       bottomNavigationBar: AppBottomNav(
         currentIndex: _currentIndex,

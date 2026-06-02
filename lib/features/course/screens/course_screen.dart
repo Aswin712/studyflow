@@ -8,6 +8,8 @@ import '../../exam/providers/exam_provider.dart';
 import 'course_form_screen.dart';
 import 'ipk_calculator_screen.dart';
 import '../../../shared/widgets/empty_state_widget.dart';
+import '../../../shared/widgets/tutorial_fab_highlight.dart';
+import '../../settings/setting_provider.dart';
 
 class CourseScreen extends StatelessWidget {
   const CourseScreen({super.key});
@@ -55,10 +57,18 @@ class CourseScreen extends StatelessWidget {
           );
         },
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => _openForm(context),
-        icon: const Icon(Icons.add),
-        label: const Text('Tambah'),
+      floatingActionButton: Consumer2<SettingsProvider, CourseProvider>(
+        builder: (context, settings, courseProvider, child) {
+          final isHighlighting = !settings.isTutorialCompleted && courseProvider.courses.isEmpty;
+          return TutorialFabHighlight(
+            isHighlighting: isHighlighting,
+            child: FloatingActionButton.extended(
+              onPressed: () => _openForm(context),
+              icon: const Icon(Icons.add),
+              label: const Text('Tambah'),
+            ),
+          );
+        },
       ),
     );
   }

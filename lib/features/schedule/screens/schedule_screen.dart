@@ -8,6 +8,8 @@ import '../../course/providers/course_provider.dart';
 import '../providers/schedule_provider.dart';
 import 'schedule_form_screen.dart';
 import '../../../shared/widgets/empty_state_widget.dart';
+import '../../../shared/widgets/tutorial_fab_highlight.dart';
+import '../../settings/setting_provider.dart';
 
 class ScheduleScreen extends StatefulWidget {
   const ScheduleScreen({super.key});
@@ -39,15 +41,25 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
           Expanded(child: _ScheduleList(day: _selectedDay)),
         ],
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (_) => ScheduleFormScreen(initialDay: _selectedDay),
-          ),
-        ),
-        icon: const Icon(Icons.add),
-        label: const Text('Tambah'),
+      floatingActionButton: Consumer3<SettingsProvider, CourseProvider, ScheduleProvider>(
+        builder: (context, settings, courseProvider, scheduleProvider, child) {
+          final isHighlighting = !settings.isTutorialCompleted && 
+                                 courseProvider.courses.isNotEmpty && 
+                                 scheduleProvider.all.isEmpty;
+          return TutorialFabHighlight(
+            isHighlighting: isHighlighting,
+            child: FloatingActionButton.extended(
+              onPressed: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => ScheduleFormScreen(initialDay: _selectedDay),
+                ),
+              ),
+              icon: const Icon(Icons.add),
+              label: const Text('Tambah'),
+            ),
+          );
+        },
       ),
     );
   }
