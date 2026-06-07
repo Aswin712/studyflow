@@ -9,7 +9,7 @@ class ExamProvider extends ChangeNotifier {
   final ExamRepository _repo;
   final NotificationService _notif;
   List<Exam> _exams = [];
-  bool _hasSyncedNotifications = false;
+  DateTime? _lastSyncAt; // debounce: min. 5 menit antar sync
 
   ExamProvider(this._repo, this._notif) {
     load();
@@ -95,8 +95,12 @@ class ExamProvider extends ChangeNotifier {
   }
 
   Future<void> syncNotifications(String Function(String) getCourseName) async {
-    if (_hasSyncedNotifications) return;
-    _hasSyncedNotifications = true;
+    final now = DateTime.now();
+    if (_lastSyncAt != null &&
+        now.difference(_lastSyncAt!).inMinutes < 5) {
+      return;
+    }
+    _lastSyncAt = now;
 
     for (final exam in upcoming) {
       await _notif.cancelExamReminder(exam.id);

@@ -1,5 +1,60 @@
 # Patch Update
 
+## Version 3.7.0 (Polish Roadmap: UX Jadwal, Validasi Form & Notifikasi Andal)
+Pembaruan *polish* yang menutup semua celah UX dan keandalan sistem prioritas tinggi. Fokus pada tiga area kritis: kemudahan input jadwal, validasi form yang ketat, dan sistem notifikasi yang tidak pernah mati meski HP di-*reboot*.
+
+### 🔴 P1: UX Input Jadwal (Opsi C)
+
+**Time Chips Preset:**
+- Ditambahkan 9 tombol preset waktu kuliah umum di form jadwal: `07:00`, `08:00`, `09:00`, `10:00`, `11:00`, `13:00`, `14:00`, `15:00`, `16:00`.
+- Ketika preset dipilih, jam selesai otomatis ikut bergeser secara proporsional (menjaga durasi kuliah).
+- `File: lib/features/schedule/screens/schedule_form_screen.dart`
+
+**Duplikat Jadwal Satu Ketukan:**
+- Setiap kartu jadwal kini memiliki tombol `copy_outlined` di ujung kanannya.
+- Menekan tombol akan membuka form baru yang sudah *prefilled* dengan data jadwal asal — pengguna hanya perlu mengubah hari dan langsung simpan.
+- `File: lib/features/schedule/screens/schedule_screen.dart`
+
+**Validasi Konflik Jadwal:**
+- Sistem sekarang menolak jadwal yang bertabrakan waktu di hari yang sama.
+- Snackbar oranye akan menampilkan nama mata kuliah yang konflik beserta jam-nya.
+- Validasi jam selesai harus setelah jam mulai juga ditambahkan.
+- `File: lib/features/schedule/screens/schedule_form_screen.dart`
+
+### 🔴 P2: Validasi Form — Deadline Lewat
+
+**Peringatan Dialog Deadline Sudah Berlalu:**
+- Ketika pengguna menekan *Simpan* pada form tugas dan deadline yang dipilih sudah berlalu, sistem menampilkan dialog konfirmasi dengan ikon oranye.
+- Pengguna bisa memilih *"Ubah Deadline"* (kembali ke form) atau *"Tetap Simpan"* (lanjut tanpa notifikasi).
+- Semua log debug verbose di `_submit` juga telah dibersihkan.
+- `File: lib/features/task/screens/task_form_screen.dart`
+
+### 🔴 P3: Notifikasi Andal — Debounce & Lifecycle Sync
+
+**Perbaikan `syncNotifications` — Tidak Lagi Terkunci Sekali:**
+- Flag `_hasSyncedNotifications` yang hanya mengizinkan satu kali sync per sesi dihapus dari `TaskProvider` dan `ExamProvider`.
+- Digantikan dengan mekanisme *debounce* berbasis timestamp: sync hanya dijalankan jika sudah lebih dari **5 menit** sejak sync terakhir.
+- Artinya: jika pengguna menambah tugas baru, menutup aplikasi, lalu membuka kembali setelah 5 menit, notifikasi tugas baru tersebut **pasti** ikut ter-sync.
+
+**Re-sync saat Kembali dari Background:**
+- `MainScreen` kini mengimplementasikan `WidgetsBindingObserver`.
+- Setiap kali `AppLifecycleState.resumed` terpicu (HP dibuka dari layar kunci, aplikasi dibuka dari app switcher), `syncNotifications` dipanggil otomatis.
+- `File: lib/app/app.dart`, `lib/features/task/providers/task_provider.dart`, `lib/features/exam/providers/exam_provider.dart`
+
+### Daftar Semua File yang Diubah
+
+| File | Jenis Perubahan |
+|---|---|
+| `lib/features/schedule/screens/schedule_form_screen.dart` | Time Chips preset, validasi jam bentrok, validasi end > start |
+| `lib/features/schedule/screens/schedule_screen.dart` | Tombol Duplikat di kartu jadwal |
+| `lib/features/task/screens/task_form_screen.dart` | Dialog peringatan deadline sudah lewat, hapus debug log |
+| `lib/features/task/providers/task_provider.dart` | Ganti flag dengan debounce 5 menit |
+| `lib/features/exam/providers/exam_provider.dart` | Ganti flag dengan debounce 5 menit |
+| `lib/app/app.dart` | Tambah `WidgetsBindingObserver`, sync on resume |
+| `pubspec.yaml` | Version bump → 3.7.0+370 |
+
+---
+
 ## Version 3.6.0 (Arsitektur Failsafe ZIP & Kompresi Pintar)
 Pembaruan tingkat menengah (Medium Update) yang merombak lapisan bawah (Under-the-Hood) aplikasi agar tahan banting terhadap skenario *data loss* serta hemat memori internal. Semuanya disusun dengan filosofi *Keep It Simple, Stupid* (KISS) demi performa maksimal.
 

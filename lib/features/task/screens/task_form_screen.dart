@@ -236,31 +236,42 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
 
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
+
+    // Peringatan jika deadline sudah lewat
+    final deadlineDt = _deadlineTime != null
+        ? DateTime(_deadline.year, _deadline.month, _deadline.day,
+            _deadlineTime!.hour, _deadlineTime!.minute)
+        : DateTime(_deadline.year, _deadline.month, _deadline.day, 23, 59);
+
+    if (deadlineDt.isBefore(DateTime.now())) {
+      final confirmed = await showDialog<bool>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          icon: const Icon(Icons.warning_amber_outlined, color: Colors.orange, size: 32),
+          title: const Text('Deadline sudah lewat'),
+          content: const Text(
+            'Tanggal deadline yang dipilih sudah berlalu.\n'
+            'Notifikasi tidak akan dikirim. Tetap simpan?',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: const Text('Ubah Deadline'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              style: FilledButton.styleFrom(backgroundColor: Colors.orange),
+              child: const Text('Tetap Simpan'),
+            ),
+          ],
+        ),
+      );
+      if (confirmed != true || !mounted) return;
+    }
+
     final provider = context.read<TaskProvider>();
     final course = context.read<CourseProvider>().getById(_selectedCourseId!);
     final courseName = course?.name ?? '';
-
-    // Debug: log semua nilai yang dikirim ke provider
-    debugPrint('\n[TaskForm] SUBMIT:');
-    debugPrint('[TaskForm]   title        = ${_titleCtrl.text.trim()}');
-    debugPrint('[TaskForm]   courseId     = $_selectedCourseId');
-    debugPrint('[TaskForm]   courseName  = $courseName');
-    debugPrint('[TaskForm]   deadline    = $_deadline');
-    debugPrint('[TaskForm]   deadlineTime= $_deadlineTime');
-    debugPrint('[TaskForm]   priority    = $_priority');
-    debugPrint('[TaskForm]   isEdit      = $_isEdit');
-    if (_deadlineTime != null) {
-      final dt = DateTime(
-        _deadline.year, _deadline.month, _deadline.day,
-        _deadlineTime!.hour, _deadlineTime!.minute,
-      );
-      debugPrint('[TaskForm]   deadlineDateTime (computed) = $dt');
-    } else {
-      final dt = DateTime(
-        _deadline.year, _deadline.month, _deadline.day, 23, 59,
-      );
-      debugPrint('[TaskForm]   deadlineDateTime (default 23:59) = $dt');
-    }
 
     if (_isEdit) {
       await provider.update(

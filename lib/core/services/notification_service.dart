@@ -21,7 +21,8 @@ class NotificationService {
 
   /// Jumlah slot notifikasi per item (task/exam).
   /// Tinggi bisa sampai 7 hari + 1jam + 30menit + 15menit = 10 notif.
-  static const int _slotsPerItem = 10;
+  /// Diberi buffer 12 agar tidak terpotong walau ada reminder yang lewat.
+  static const int _slotsPerItem = 12;
 
   Future<void> init({
     void Function(NotificationResponse)? onDidReceiveNotificationResponse,
@@ -124,7 +125,6 @@ class NotificationService {
     }
 
     int slot = 0;
-    int scheduled = 0;
     for (final reminder in reminders) {
       if (slot >= _slotsPerItem) {
         if (_verbose) {
@@ -133,13 +133,12 @@ class NotificationService {
         break;
       }
 
-      // Skip waktu yang sudah lewat
+      // Skip waktu yang sudah lewat — TIDAK mengkonsumsi slot
       if (reminder.dateTime.isBefore(now)) {
         if (_verbose) {
-          debugPrint('[Notif]   SKIP slot $slot — '
+          debugPrint('[Notif]   SKIP (no slot) — '
               '${reminder.dateTime} sudah lewat (${reminder.label})');
         }
-        slot++;
         continue;
       }
 
@@ -162,17 +161,17 @@ class NotificationService {
           uiLocalNotificationDateInterpretation:
               UILocalNotificationDateInterpretation.absoluteTime,
         );
-        scheduled++;
+        slot++;
       } catch (e) {
         if (_verbose) {
           debugPrint('[Notif]   ❌ ERROR slot $slot: $e');
         }
+        slot++;
       }
-      slot++;
     }
 
     if (_verbose) {
-      debugPrint('[Notif]   RESULT: $scheduled/$slot scheduled');
+      debugPrint('[Notif]   RESULT: $slot notifications scheduled');
       debugPrint('════════════════════════════════════════════\n');
 
       // Verifikasi: list semua pending notifications

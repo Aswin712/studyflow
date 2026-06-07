@@ -183,7 +183,7 @@ class _ScheduleCard extends StatelessWidget {
               ),
               Expanded(
                 child: Padding(
-                  padding: const EdgeInsets.all(16),
+                  padding: const EdgeInsets.fromLTRB(16, 12, 8, 12),
                   child: Row(
                     children: [
                       Expanded(
@@ -231,6 +231,25 @@ class _ScheduleCard extends StatelessWidget {
                           ),
                         ],
                       ),
+                      // Tombol Duplikat
+                      const SizedBox(width: 4),
+                      Tooltip(
+                        message: 'Duplikat jadwal',
+                        child: IconButton(
+                          icon: Icon(Icons.copy_outlined,
+                              size: 18, color: theme.colorScheme.outline),
+                          visualDensity: VisualDensity.compact,
+                          onPressed: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => ScheduleFormScreen(
+                                prefill: schedule,
+                                initialDay: schedule.day,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
                     ],
                   ),
                 ),
@@ -242,3 +261,4 @@ class _ScheduleCard extends StatelessWidget {
     );
   }
 }
+

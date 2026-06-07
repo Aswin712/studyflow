@@ -24,11 +24,6 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       "description": "StudyFlow akan mengingatkanmu tentang tugas yang belum selesai dan ujian yang akan datang.",
       "icon": "alarm",
     },
-    {
-      "title": "Sesuaikan Gayamu",
-      "description": "Pilih warna aksen favoritmu dan nikmati mode gelap untuk kenyamanan mata di malam hari.",
-      "icon": "palette",
-    },
   ];
 
   IconData _getIconData(String name) {

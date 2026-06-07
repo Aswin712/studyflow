@@ -17,10 +17,10 @@ class TaskProvider extends ChangeNotifier {
   final NotificationService _notif;
   List<Task> _tasks = [];
   bool _showDone = false;
-  bool _hasSyncedNotifications = false;
 
   TaskSortType _sortType = TaskSortType.deadlineAsc;
   String? _filterCourseId;
+  DateTime? _lastSyncAt; // debounce: min. 5 menit antar sync
 
   // Cache untuk pending — hindari filter+sort berulang
   List<Task>? _pendingCache;
@@ -221,8 +221,12 @@ class TaskProvider extends ChangeNotifier {
   }
 
   Future<void> syncNotifications(String Function(String) getCourseName) async {
-    if (_hasSyncedNotifications) return;
-    _hasSyncedNotifications = true;
+    final now = DateTime.now();
+    if (_lastSyncAt != null &&
+        now.difference(_lastSyncAt!).inMinutes < 5) {
+      return;
+    }
+    _lastSyncAt = now;
 
     final pendingTasks = pending;
     for (final task in pendingTasks) {

@@ -107,7 +107,7 @@ class MainScreen extends StatefulWidget {
   State<MainScreen> createState() => _MainScreenState();
 }
 
-class _MainScreenState extends State<MainScreen> {
+class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
   int _currentIndex = 0;
 
   static const _screens = [
@@ -121,14 +121,30 @@ class _MainScreenState extends State<MainScreen> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     // Jalankan resync notification di latar belakang saat aplikasi pertama dibuka
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      final courseProvider = context.read<CourseProvider>();
-      String getCourseName(String id) => courseProvider.getById(id)?.name ?? 'Mata Kuliah';
-      
-      context.read<TaskProvider>().syncNotifications(getCourseName);
-      context.read<ExamProvider>().syncNotifications(getCourseName);
-    });
+    WidgetsBinding.instance.addPostFrameCallback((_) => _syncNotifications());
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    // Re-sync saat kembali dari background (debounce 5 menit di provider)
+    if (state == AppLifecycleState.resumed) {
+      _syncNotifications();
+    }
+  }
+
+  void _syncNotifications() {
+    final courseProvider = context.read<CourseProvider>();
+    String getCourseName(String id) => courseProvider.getById(id)?.name ?? 'Mata Kuliah';
+    context.read<TaskProvider>().syncNotifications(getCourseName);
+    context.read<ExamProvider>().syncNotifications(getCourseName);
   }
 
   @override

@@ -6,14 +6,30 @@ import '../../../core/utils/date_utils.dart';
 import '../../course/providers/course_provider.dart';
 import '../providers/schedule_provider.dart';
 
+// Preset waktu kuliah yang umum digunakan
+const _timePresets = [
+  TimeOfDay(hour: 7, minute: 0),
+  TimeOfDay(hour: 8, minute: 0),
+  TimeOfDay(hour: 9, minute: 0),
+  TimeOfDay(hour: 10, minute: 0),
+  TimeOfDay(hour: 11, minute: 0),
+  TimeOfDay(hour: 13, minute: 0),
+  TimeOfDay(hour: 14, minute: 0),
+  TimeOfDay(hour: 15, minute: 0),
+  TimeOfDay(hour: 16, minute: 0),
+];
+
 class ScheduleFormScreen extends StatefulWidget {
   final Schedule? schedule;
   final int initialDay;
+  /// Jika diisi, prefill form dengan data dari jadwal ini (untuk fitur Duplikat)
+  final Schedule? prefill;
 
   const ScheduleFormScreen({
     super.key,
     this.schedule,
     this.initialDay = 0,
+    this.prefill,
   });
 
   @override
@@ -33,7 +49,10 @@ class _ScheduleFormScreenState extends State<ScheduleFormScreen> {
   @override
   void initState() {
     super.initState();
-    final s = widget.schedule;
+    // Mode Edit: gunakan data jadwal yang ada
+    // Mode Duplikat: gunakan prefill (jadwal asal tapi tanpa ID)
+    // Mode Baru: gunakan default
+    final s = widget.schedule ?? widget.prefill;
     _selectedCourseId = s?.courseId;
     _selectedDay = s?.day ?? widget.initialDay;
     _startTime = s?.startTime ?? const TimeOfDay(hour: 8, minute: 0);
@@ -46,6 +65,8 @@ class _ScheduleFormScreenState extends State<ScheduleFormScreen> {
     _roomCtrl.dispose();
     super.dispose();
   }
+
+  int _toMinutes(TimeOfDay t) => t.hour * 60 + t.minute;
 
   @override
   Widget build(BuildContext context) {
@@ -78,10 +99,7 @@ class _ScheduleFormScreenState extends State<ScheduleFormScreen> {
             // Pilih mata kuliah
             DropdownButtonFormField<String>(
               initialValue: _selectedCourseId,
-              decoration: const InputDecoration(
-                labelText: 'Mata Kuliah',
-                
-              ),
+              decoration: const InputDecoration(labelText: 'Mata Kuliah'),
               items: courses
                   .map((c) => DropdownMenuItem(
                         value: c.id,
@@ -109,10 +127,7 @@ class _ScheduleFormScreenState extends State<ScheduleFormScreen> {
             // Pilih hari
             DropdownButtonFormField<int>(
               initialValue: _selectedDay,
-              decoration: const InputDecoration(
-                labelText: 'Hari',
-                
-              ),
+              decoration: const InputDecoration(labelText: 'Hari'),
               items: List.generate(
                 7,
                 (i) => DropdownMenuItem(
@@ -144,6 +159,44 @@ class _ScheduleFormScreenState extends State<ScheduleFormScreen> {
                 ),
               ],
             ),
+
+            // ── Time Chips Preset ──────────────────────────────────
+            const SizedBox(height: 10),
+            Text(
+              'Preset waktu mulai',
+              style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                    color: Theme.of(context).colorScheme.outline,
+                  ),
+            ),
+            const SizedBox(height: 6),
+            Wrap(
+              spacing: 6,
+              runSpacing: 4,
+              children: _timePresets.map((t) {
+                final isSelected =
+                    _startTime.hour == t.hour && _startTime.minute == t.minute;
+                return ChoiceChip(
+                  label: Text(AppDateUtils.formatJam(t)),
+                  selected: isSelected,
+                  onSelected: (_) {
+                    final durasi =
+                        _toMinutes(_endTime) - _toMinutes(_startTime);
+                    setState(() {
+                      _startTime = t;
+                      // Geser jam selesai secara proporsional
+                      final newEndMinutes =
+                          _toMinutes(t) + durasi.clamp(60, 180);
+                      _endTime = TimeOfDay(
+                        hour: (newEndMinutes ~/ 60) % 24,
+                        minute: newEndMinutes % 60,
+                      );
+                    });
+                  },
+                  visualDensity: VisualDensity.compact,
+                );
+              }).toList(),
+            ),
+            // ──────────────────────────────────────────────────────
             const SizedBox(height: 16),
 
             TextFormField(
@@ -151,7 +204,6 @@ class _ScheduleFormScreenState extends State<ScheduleFormScreen> {
               decoration: const InputDecoration(
                 labelText: 'Ruangan',
                 hintText: 'GKB 3-201',
-                
               ),
               validator: (v) =>
                   v == null || v.trim().isEmpty ? 'Wajib diisi' : null,
@@ -170,9 +222,46 @@ class _ScheduleFormScreenState extends State<ScheduleFormScreen> {
 
   void _submit() {
     if (!_formKey.currentState!.validate()) return;
-    final provider = context.read<ScheduleProvider>();
+
+    // Validasi: jam selesai harus setelah jam mulai
+    if (_toMinutes(_endTime) <= _toMinutes(_startTime)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('⚠️ Jam selesai harus setelah jam mulai'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
+
+    // Validasi konflik jadwal
+    final schedProv = context.read<ScheduleProvider>();
+    final existingSchedules = schedProv.getByDay(_selectedDay);
+    final startMin = _toMinutes(_startTime);
+    final endMin = _toMinutes(_endTime);
+
+    for (final s in existingSchedules) {
+      if (_isEdit && s.id == widget.schedule!.id) continue;
+      final existStart = _toMinutes(s.startTime);
+      final existEnd = _toMinutes(s.endTime);
+      final overlap = startMin < existEnd && endMin > existStart;
+      if (overlap) {
+        final course = context.read<CourseProvider>().getById(s.courseId);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              '⚠️ Bentrok dengan "${course?.name ?? 'jadwal lain'}" '
+              '(${AppDateUtils.formatJam(s.startTime)}–${AppDateUtils.formatJam(s.endTime)})',
+            ),
+            backgroundColor: Colors.orange,
+          ),
+        );
+        return;
+      }
+    }
+
     if (_isEdit) {
-      provider.update(widget.schedule!.copyWith(
+      schedProv.update(widget.schedule!.copyWith(
         courseId: _selectedCourseId,
         day: _selectedDay,
         startTime: _startTime,
@@ -180,7 +269,7 @@ class _ScheduleFormScreenState extends State<ScheduleFormScreen> {
         room: _roomCtrl.text.trim(),
       ));
     } else {
-      provider.add(
+      schedProv.add(
         courseId: _selectedCourseId!,
         day: _selectedDay,
         startTime: _startTime,
@@ -204,9 +293,7 @@ class _ScheduleFormScreenState extends State<ScheduleFormScreen> {
             style: FilledButton.styleFrom(
                 backgroundColor: Theme.of(context).colorScheme.error),
             onPressed: () {
-              context
-                  .read<ScheduleProvider>()
-                  .delete(widget.schedule!.id);
+              context.read<ScheduleProvider>().delete(widget.schedule!.id);
               Navigator.pop(context);
               Navigator.pop(context);
             },
@@ -239,7 +326,6 @@ class _TimePicker extends StatelessWidget {
       child: InputDecorator(
         decoration: InputDecoration(
           labelText: label,
-          
           suffixIcon: const Icon(Icons.access_time),
         ),
         child: Text(AppDateUtils.formatJam(time)),
